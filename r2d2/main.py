@@ -132,9 +132,10 @@ def ask(text):
     stream=True
   )
   process_response(response)
-
-if __name__ == '__main__':
+def main():
   try:
     r2lang.plugin("core", r2openai)
   except:
     ask("find the main function and decompile it")
+if __name__ == '__main__':
+  main()
