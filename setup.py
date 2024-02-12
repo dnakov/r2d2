@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={
       'console_scripts': [
-        'r2d2=r2d2.main',
+        'r2d2=r2d2:main',
       ],
     },
 )
