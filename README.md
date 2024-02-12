@@ -9,15 +9,13 @@ https://github.com/dnakov/r2d2/assets/3777433/5bcc8e20-dda0-48ac-94e5-e0c8c44a09
 
 
 ## Installation
-`pip install -r requirements.txt`
-
-Install radare2 and rlang-python:
 ```
 brew install radare2
 r2pm -i rlang-python
+r2pm -i r2d2
 ```
 
 ## Usage
 ```
-r2 -i r2d2.py <binary>
+r2 -r r2d2 <binary>
 ```
