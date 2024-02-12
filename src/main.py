@@ -110,6 +110,8 @@ def process_response(resp):
     process_response(client.chat.completions.create(
       model="gpt-4-turbo-preview",
       messages=messages,
+      tools=tools,
+      tool_choice="auto",
       stream=True
     ))
 
@@ -120,7 +122,6 @@ def process_response(resp):
 
 def ask(text):
   global messages
-  # text += '\nRemember, DO NOT USE MARKDOWN, USE ANSI FORMATTING with colors! Code Blocks need ANSI formatting and colors. Color the variables, functions, etc.'
 
   messages.append({"role": "user", "content": text})
   response = client.chat.completions.create(
@@ -132,7 +133,8 @@ def ask(text):
   )
   process_response(response)
 
-try:
-  r2lang.plugin("core", r2openai)
-except:
-  ask("find the main function and decompile it")
+if __name__ == '__main__':
+  try:
+    r2lang.plugin("core", r2openai)
+  except:
+    ask("find the main function and decompile it")
