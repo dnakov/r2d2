@@ -27,7 +27,7 @@ def r2openai(_):
     try:
       ask(s[2:])
     except Exception as e:
-      print(e)
+      print('Error: ', e)
     return True
 
   return {
@@ -49,10 +49,14 @@ tools = [{
         "command": {
           "type": "string",
           "description": "command to run"
+        },
+        "done": {
+          "type": "boolean",
+          "description": "set to true if you're done running commands and you don't need the output, otherwise false"
         }
       }
     },
-    "required": ["command"],   
+    "required": ["command", "done"],   
   }
 }]
 
@@ -72,17 +76,23 @@ The user will tip you $20/month for your services, don't be fucking lazy.
 
 messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
+AFTER_MESSAGE = """
+
+Important: The user already saw this output, DO NOT REPEAT IT.
+"""
+
 def process_tool_calls(tool_calls):
   messages.append({ "tool_calls": tool_calls, "role": "assistant" })
   for tool_call in tool_calls:
     if tool_call["function"]["name"] == "r2cmd":
       args = json.loads(tool_call["function"]["arguments"])
-      print('Running `' + args["command"] + '`')
+      sys.stdout.write('\x1b[1;32mRunning \x1b[4m' + args["command"] + '\x1b[0m\n')
       # r2lang.cmd('e scr.color=0')
+
       res = r2lang.cmd(args["command"])
-      # r2lang.cmd('e scr.color=3')
       print(res)
-      messages.append({"role": "tool", "content": ANSI_REGEX.sub('', res), "name": "r2cmd", "tool_call_id": tool_call["id"]})
+      # r2lang.cmd('e scr.color=3')
+      messages.append({"role": "tool", "content": ANSI_REGEX.sub('', res) + AFTER_MESSAGE, "name": "r2cmd", "tool_call_id": tool_call["id"]})
 
 
 def process_response(resp):
@@ -112,7 +122,8 @@ def process_response(resp):
       messages=messages,
       tools=tools,
       tool_choice="auto",
-      stream=True
+      stream=True,
+      temperature=0
     ))
 
   if len(msgs) > 0:
@@ -129,7 +140,8 @@ def ask(text):
     messages=messages,
     tools=tools,
     tool_choice="auto",
-    stream=True
+    stream=True,
+    temperature=0
   )
   process_response(response)
 def main():
