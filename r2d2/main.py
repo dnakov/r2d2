@@ -42,7 +42,7 @@ tools = [{
   "type": "function",
   "function": {
     "name": "r2cmd",
-    "desc": "runs commands in radare2. You can run it multiple times or chain commands with pipes/semicolons",
+    "description": "runs commands in radare2. You can run it multiple times or chain commands with pipes/semicolons. You can also use r2 interpreters to run scripts using the `#`, '#!', etc. commands. The output could be long, so try to use filters if possible or limit",
     "parameters": {
       "type": "object",
       "properties": {
@@ -57,6 +57,22 @@ tools = [{
       }
     },
     "required": ["command", "done"],   
+  }
+}, {
+  "type": "function",
+  "function": {
+    "name": "run_python",
+    "description": "runs a python script and returns the results",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "python script to run"
+        }
+      }
+    },
+    "required": ["command"],   
   }
 }]
 
@@ -84,6 +100,7 @@ Important: The user already saw this output, DO NOT REPEAT IT.
 def process_tool_calls(tool_calls):
   messages.append({ "tool_calls": tool_calls, "role": "assistant" })
   for tool_call in tool_calls:
+    res = ''
     if tool_call["function"]["name"] == "r2cmd":
       args = json.loads(tool_call["function"]["arguments"])
       sys.stdout.write('\x1b[1;32mRunning \x1b[4m' + args["command"] + '\x1b[0m\n')
@@ -91,8 +108,22 @@ def process_tool_calls(tool_calls):
 
       res = r2lang.cmd(args["command"])
       print(res)
+    elif tool_call["function"]["name"] == "run_python":
+      args = json.loads(tool_call["function"]["arguments"])
+      # save to file
+      with open('temp.py', 'w') as f:
+        f.write(args["command"])
+      sys.stdout.write('\x1b[1;32mRunning \x1b[4m' + "#!python temp.py" + '\x1b[0m\n')
+      print(args["command"])
+      print("")
+      r2lang.cmd('#!python temp.py > temp_output')
+      with open('temp_output', 'r') as o:
+        res = o.read()
+      print(res)
+    print("")
+
       # r2lang.cmd('e scr.color=3')
-      messages.append({"role": "tool", "content": ANSI_REGEX.sub('', res) + AFTER_MESSAGE, "name": "r2cmd", "tool_call_id": tool_call["id"]})
+    messages.append({"role": "tool", "content": ANSI_REGEX.sub('', res) + AFTER_MESSAGE, "name": tool_call["function"]["name"], "tool_call_id": tool_call["id"]})
 
 
 def process_response(resp):
@@ -114,6 +145,7 @@ def process_response(resp):
       if m is not None:
         msgs.append(m)
         sys.stdout.write(m)
+  print("")
 
   if(len(tool_calls) > 0):
     process_tool_calls(tool_calls)
@@ -133,7 +165,6 @@ def process_response(resp):
 
 def ask(text):
   global messages
-
   messages.append({"role": "user", "content": text})
   response = client.chat.completions.create(
     model="gpt-4-turbo-preview",
